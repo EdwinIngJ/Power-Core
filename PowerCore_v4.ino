@@ -171,7 +171,7 @@ long currentLCDMillis = millis();
     p.x = (SCREEN_WIDTH - map(p.x, TS_MINX, TS_MAXX, SCREEN_WIDTH, 0));
     p.y = (SCREEN_HEIGHT - map(p.y, TS_MINY, TS_MAXY, SCREEN_HEIGHT, 0));
     
-  Serial.println(String(p.y) + " " + String(p.x));
+  //Serial.println(String(p.y) + " " + String(p.x));
   }
   
   //Checks if Buttons were Pressed
