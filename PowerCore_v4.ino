@@ -186,6 +186,7 @@ long currentLCDMillis = millis();
       buttons[b].press(false); // tell the button it is NOT pressed
     }
   }
+  Xtransmission();
 }
 
 //CUSTOM FUNCTIONS
@@ -294,5 +295,12 @@ void saveData(){
   }
 }
 
-
-///Got rid of Screensaver
+void Xtransmission()
+{
+ Serial1.print(volt);
+ Serial1.print(mA);
+ Serial1.print(mV);
+ Serial1.print(mWh);
+ Serial1.print(TimeLeft);
+  
+}
