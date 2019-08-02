@@ -113,14 +113,17 @@ String Labels[6] = {"Voltage:", "Current:", "Power:", "Capacity:", "TimeLeft:"};
 void setup() {
   Serial.begin(9600);
   Serial.println(F("PowerCore Program"));//Name of Battery Program
-
+  Serial1.begin(9600);
   uint16_t ID = tft.readID();//reads ID of screen to start LCD driver
   tft.begin(ID);
   tft.setRotation(1);//rotates screen 90 degrees
   tft.fillScreen(WHITE);
   
   Serial.println("Display: " + String(tft.width()) + String(tft.height())); 
-
+  
+  //Power XBee
+  pinMode(45, OUTPUT);
+  
   //Setup SD
   pinMode(10, OUTPUT);
   sd_setup();
@@ -146,6 +149,7 @@ const int SCREEN_HEIGHT = tft.height();
 void loop() {
 
 //Check if screen is ready to update
+digitalWrite(45, HIGH);
 long currentLCDMillis = millis();
   if (currentLCDMillis - previousLCDMillis > lcdInterval){
     previousLCDMillis = currentLCDMillis;
@@ -293,14 +297,4 @@ void saveData(){
   else{
     Serial.println("Error writing to file !");
   }
-}
-
-void Xtransmission()
-{
- Serial1.print(volt);
- Serial1.print(mA);
- Serial1.print(mW);
- Serial1.print(mWh);
- Serial1.print(Time_Left);
-  
 }
