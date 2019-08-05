@@ -1,6 +1,6 @@
 /*
   Code for running the touchscreen and sensor components used in the power bank project named PowerCore. 
-  It contains the drivers for the screen, as well as, the UI for accessing the Voltage, Current, Power, Capacity, and Time to Charge. 
+  It contains the drivers for the screen, as well as, the UI for accessing the Voltage, Current, Power, Energy, Percentage and Time to Charge. 
   This also includes the functions for the collecting and displaying values from an INA219 current sensor.
 */
 //Libraries
@@ -9,7 +9,6 @@
 #include <Adafruit_SPITFT.h>
 #include <Adafruit_SPITFT_Macros.h>
 #include <gfxfont.h>
-
 
 #include <SD.h>
 #include <SPI.h>
@@ -74,8 +73,12 @@ Adafruit_INA219 ina219;
 String volt;
 String mA; 
 String mW;
-String mWh; 
-String Time_Left;
+//String mWh; 
+String Percent;
+String Time_Left = "Time Left:";
+
+//Status to show if Dischargin or Charging
+bool status;
 
 ////////////////////////////////////////////////////
 //              Screen and UI                     //
@@ -108,12 +111,13 @@ char buttonlabels[2][10]= {"Next", "Previous"};
 uint16_t buttoncolor = DARKGRAY;
 
 //Creating labels for the information on the display
-String Labels[6] = {"Voltage:", "Current:", "Power:", "Capacity:", "TimeLeft:"};
+String Labels[6] = {"Voltage:", "Current:", "Power:", "Energy:", "Percentage:", "TimeLeft:"};
 
 void setup() {
   Serial.begin(9600);
   Serial.println(F("PowerCore Program"));//Name of Battery Program
   Serial1.begin(9600);
+  
   uint16_t ID = tft.readID();//reads ID of screen to start LCD driver
   tft.begin(ID);
   tft.setRotation(1);//rotates screen 90 degrees
@@ -147,9 +151,10 @@ const int SCREEN_WIDTH = tft.width();
 const int SCREEN_HEIGHT = tft.height();
 
 void loop() {
-
+  
+  digitalWrite(45, HIGH);
+  
 //Check if screen is ready to update
-digitalWrite(45, HIGH);
 long currentLCDMillis = millis();
   if (currentLCDMillis - previousLCDMillis > lcdInterval){
     previousLCDMillis = currentLCDMillis;
@@ -190,6 +195,8 @@ long currentLCDMillis = millis();
       buttons[b].press(false); // tell the button it is NOT pressed
     }
   }
+  
+  //Transmits Data
   Xtransmission();
 }
 
@@ -233,15 +240,21 @@ void displayData() {
   tft.setTextColor(TEXT_COLOR, WHITE);
   tft.setTextSize(TEXT_SIZE);
   tft.print(mW);
+  /*
   tft.setCursor(TEXT_X, TEXT_Y +  3 * (TEXT_SPACING));
   tft.setTextColor(TEXT_COLOR, WHITE);
   tft.setTextSize(TEXT_SIZE);
   tft.print(mWh);
-  tft.setCursor((SCREEN_WIDTH / 2) + 50 + TEXT_X, TEXT_Y);
+  */
+  tft.setCursor(TEXT_X, TEXT_Y +  3 * (TEXT_SPACING));
+  tft.setTextColor(TEXT_COLOR, WHITE);
+  tft.setTextSize(TEXT_SIZE);
+  tft.print(Percent);
+  tft.setCursor(TEXT_X, TEXT_Y +  4 * (TEXT_SPACING));
   tft.setTextColor(TEXT_COLOR, WHITE);
   tft.setTextSize(TEXT_SIZE);
   tft.print(Time_Left);
-  //Serial.println("Done");
+  
 }
 
 //////////////////////////////////////////
@@ -251,12 +264,24 @@ void prepareData() {
   busvoltage = ina219.getBusVoltage_V();
   current_mA = ina219.getCurrent_mA();
   loadvoltage = busvoltage + (shuntvoltage / 1000);
-  energy = energy + loadvoltage * current_mA / 3600;
+  //energy = energy + loadvoltage * current_mA / 3600;
   volt = Labels[0] + String(loadvoltage) + "V ";
   mA = Labels[1] + String(current_mA) + "mA  ";
   mW = Labels[2] + String(loadvoltage * current_mA) + "mW  ";
-  mWh = Labels[3] + String(energy) + "mWh  ";
-  Time_Left = Labels[4] + "1h";
+  //mWh = Labels[3] + String(energy) + "mWh  ";
+  
+  if(loadvoltage > 9.00){
+    Percent = Labels[4] + String(((loadvoltage - 9.00) / 3.6) * 100) + "%";
+  }
+  else
+  {
+    Percent = Labels[4] + "0%";
+  }
+  
+  if(current_mA > 0){ 
+    Time_Left = Labels[5] + String(13200 * ((loadvoltage - 9.00) / 3.6) / current_mA) + "h";
+  }
+
   /*
   Serial.print(volt);
   Serial.println("V");
@@ -284,17 +309,29 @@ void sd_setup()
   Serial.println("initialization done.");
 }
 
+//////////////////////////////////////////
 void saveData(){
     if(SD.exists("data.csv")){ // check the card is still there
       // now append new data file
       Serial.println("data.csv exists");
       sensorData = SD.open("data.csv", FILE_WRITE);
       if (sensorData){
-      sensorData.println(volt + " " + mA + " " + mW + " " + mWh);
+      sensorData.println(volt + " " + mA + " " + mW);
       sensorData.close(); // close the file
     }
   }
   else{
     Serial.println("Error writing to file !");
   }
+}
+
+//////////////////////////////////////////
+void Xtransmission()
+{
+ Serial1.print(volt);
+ Serial1.print(mA);
+ Serial1.print(mW);
+ //Serial1.print(mWh);
+ Serial1.print(Time_Left);
+  
 }
