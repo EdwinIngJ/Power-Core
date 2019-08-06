@@ -6,3 +6,4 @@ Requirements
 The code only works with the following components:
 - 2.8" TFT Touch Shield for Arduino with Resistive Touch Screen (TF028)
 - INA219 High Side DC Current Sensor Breakout 
+- XBEEPRO
